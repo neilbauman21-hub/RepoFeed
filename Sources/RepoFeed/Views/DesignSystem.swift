@@ -1,14 +1,14 @@
 import SwiftUI
 
 enum RepoFeedTheme {
-    static let background = Color(hex: 0x0A0D14)
-    static let sidebar = Color(hex: 0x10141E)
-    static let card = Color(hex: 0x151B27)
-    static let cardElevated = Color(hex: 0x1B2230)
-    static let border = Color.white.opacity(0.08)
-    static let primary = Color(hex: 0x75E6C1)
-    static let secondary = Color(hex: 0x8EA8FF)
-    static let muted = Color(hex: 0x939CAD)
+    static let background = Color(hex: 0x18191A)
+    static let sidebar = Color(hex: 0x242526)
+    static let card = Color(hex: 0x242526)
+    static let cardElevated = Color(hex: 0x2B2D31)
+    static let border = Color(hex: 0x3E4042)
+    static let primary = Color(hex: 0x2D88FF)
+    static let secondary = Color(hex: 0x45BD62)
+    static let muted = Color(hex: 0xB0B3B8)
 }
 
 extension Color {

@@ -6,11 +6,12 @@ RepoFeed is a privacy-first native macOS prototype that builds a private profile
 
 - Requests read-only access to folders through the standard macOS picker.
 - Persists only security-scoped folder bookmarks.
-- Inventories eligible files while excluding secrets, credentials, dependencies, and build output.
+- Inventories eligible files while excluding secrets, credentials, dependencies, build output, system-library folders, and personal-media libraries.
 - Reads a diverse, daily-rotating sample of up to 420 code, documentation, and configuration files locally.
 - Builds a local profile of technologies, recurring interests, and likely improvement opportunities.
 - Finds README files beside `.git` folders or common project manifests for the project feed.
-- Shows local projects as social-style posts with README previews and direct links.
+- Presents everything in a familiar three-column social feed with global navigation, a scan composer, opportunity stories, and a trending rail.
+- Shows local projects as posts with README previews, profile signals, reactions, and direct links.
 - Ranks public GitHub repositories by how well they complement the private profile and explains the likely benefit.
 - Shows recently created GitHub repositories with strong star activity.
 

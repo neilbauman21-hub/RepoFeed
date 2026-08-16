@@ -63,7 +63,9 @@ struct TopicProfilerTests {
         let manager = FileManager.default
         let root = manager.temporaryDirectory.appendingPathComponent("repofeed-profile-\(UUID().uuidString)")
         let sources = root.appendingPathComponent("Sources")
+        let music = root.appendingPathComponent("Music")
         try manager.createDirectory(at: sources, withIntermediateDirectories: true)
+        try manager.createDirectory(at: music, withIntermediateDirectories: true)
         defer { try? manager.removeItem(at: root) }
 
         try "import SwiftUI\n// TODO: Add tests\nstruct HomeView: View {}".write(
@@ -74,6 +76,9 @@ struct TopicProfilerTests {
         )
         try "API_KEY=must-never-be-read".write(
             to: root.appendingPathComponent(".env"), atomically: true, encoding: .utf8
+        )
+        try "let mediaLibraryShouldBeIgnored = true".write(
+            to: music.appendingPathComponent("Track.swift"), atomically: true, encoding: .utf8
         )
 
         let profile = await FileProfileScanner().buildProfile(folders: [root], repositoryCount: 1)

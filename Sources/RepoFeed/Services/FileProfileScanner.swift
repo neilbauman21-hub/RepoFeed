@@ -11,7 +11,8 @@ actor FileProfileScanner {
     private let ignoredDirectories: Set<String> = [
         ".git", ".build", ".cache", ".gradle", ".idea", ".next", ".nuxt", ".pytest_cache",
         ".swiftpm", ".venv", ".vscode", "build", "coverage", "dist", "DerivedData", "node_modules",
-        "Pods", "target", "vendor", "venv"
+        "Pods", "target", "vendor", "venv", ".Trash", "Applications", "Library", "Movies", "Music",
+        "Pictures", "Photo Booth Library", "Photos Library.photoslibrary"
     ]
 
     private let technologyByExtension: [String: String] = [
@@ -112,6 +113,7 @@ actor FileProfileScanner {
         scannedFileCount: inout Int,
         testFileCount: inout Int
     ) {
+        guard !ignoredDirectories.contains(folder.lastPathComponent) else { return }
         let manager = FileManager.default
         let keys: [URLResourceKey] = [.isDirectoryKey, .isRegularFileKey, .fileSizeKey, .contentModificationDateKey]
         guard let enumerator = manager.enumerator(

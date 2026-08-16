@@ -14,9 +14,11 @@ struct LocalRepositoryCard: View {
                         .font(.headline.weight(.bold))
                         .lineLimit(2)
                     HStack(spacing: 6) {
-                        Label("On this Mac", systemImage: "laptopcomputer")
+                        Text("Local project")
                         Text("·")
                         Text(repository.modifiedAt, style: .relative)
+                        Text("·")
+                        Image(systemName: "lock.fill")
                     }
                     .font(.caption)
                     .foregroundStyle(RepoFeedTheme.muted)
@@ -81,6 +83,22 @@ struct LocalRepositoryCard: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 18)
 
+            HStack {
+                HStack(spacing: -4) {
+                    ReactionBubble(icon: "hand.thumbsup.fill", color: RepoFeedTheme.primary)
+                    ReactionBubble(icon: "sparkles", color: RepoFeedTheme.secondary)
+                }
+                Text(repository.topics.prefix(2).joined(separator: " · "))
+                    .font(.caption)
+                    .foregroundStyle(RepoFeedTheme.muted)
+                Spacer()
+                Text("README available")
+                    .font(.caption)
+                    .foregroundStyle(RepoFeedTheme.muted)
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 10)
+
             Divider().overlay(RepoFeedTheme.border)
             HStack(spacing: 4) {
                 CardAction(title: showsReadme ? "Hide README" : "Read README", icon: "doc.richtext") {
@@ -94,6 +112,22 @@ struct LocalRepositoryCard: View {
             .padding(8)
         }
         .repoCard()
+    }
+}
+
+private struct ReactionBubble: View {
+    let icon: String
+    let color: Color
+
+    var body: some View {
+        ZStack {
+            Circle().fill(color)
+            Image(systemName: icon)
+                .font(.system(size: 8, weight: .bold))
+                .foregroundStyle(.white)
+        }
+        .frame(width: 18, height: 18)
+        .overlay { Circle().stroke(RepoFeedTheme.card, lineWidth: 2) }
     }
 }
 
@@ -113,6 +147,110 @@ private struct CardAction: View {
         }
         .buttonStyle(.plain)
         .background(Color.white.opacity(0.001), in: RoundedRectangle(cornerRadius: 9))
+    }
+}
+
+struct SuggestedRepositoryPost: View {
+    let repository: GitHubRepository
+    @ObservedObject var model: AppModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .top, spacing: 11) {
+                ZStack {
+                    Circle().fill(RepoFeedTheme.primary)
+                    Text("r").font(.title2.weight(.black)).foregroundStyle(.white)
+                }
+                .frame(width: 42, height: 42)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("RepoFeed suggested a repository")
+                        .font(.subheadline.weight(.semibold))
+                    HStack(spacing: 5) {
+                        Text("Personalized for you")
+                        Text("·")
+                        Image(systemName: "lock.fill")
+                    }
+                    .font(.caption)
+                    .foregroundStyle(RepoFeedTheme.muted)
+                }
+                Spacer()
+                Image(systemName: "ellipsis")
+                    .foregroundStyle(RepoFeedTheme.muted)
+                    .padding(6)
+            }
+            .padding(16)
+
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(spacing: 12) {
+                    RepoMark(seed: repository.fullName, size: 54)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(repository.fullName)
+                            .font(.title3.weight(.bold))
+                        HStack(spacing: 10) {
+                            Label(compactCount(repository.stars), systemImage: "star.fill")
+                            if let language = repository.language {
+                                Label(language, systemImage: "circle.fill")
+                            }
+                        }
+                        .font(.caption)
+                        .foregroundStyle(RepoFeedTheme.muted)
+                    }
+                }
+
+                Text(repository.description ?? "A public repository selected for your builder profile.")
+                    .font(.body)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if !repository.topics.isEmpty {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 7) {
+                            ForEach(repository.topics.prefix(6), id: \.self) { TopicPill(text: $0) }
+                        }
+                    }
+                }
+
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: "lightbulb.fill")
+                        .foregroundStyle(Color(hex: 0xF7B928))
+                        .padding(.top, 2)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Why this may help")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(RepoFeedTheme.primary)
+                        Text(model.recommendationReason(for: repository))
+                            .font(.subheadline)
+                            .foregroundStyle(RepoFeedTheme.muted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .padding(13)
+                .background(Color(hex: 0x3A3B3C), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            }
+            .padding(.horizontal, 18)
+            .padding(.bottom, 16)
+
+            HStack {
+                HStack(spacing: -4) {
+                    ReactionBubble(icon: "hand.thumbsup.fill", color: RepoFeedTheme.primary)
+                    ReactionBubble(icon: "star.fill", color: Color(hex: 0xF7B928))
+                }
+                Text("Recommended from your profile")
+                    .font(.caption)
+                    .foregroundStyle(RepoFeedTheme.muted)
+                Spacer()
+            }
+            .padding(.horizontal, 18)
+            .padding(.bottom, 10)
+
+            Divider().overlay(RepoFeedTheme.border)
+            HStack(spacing: 0) {
+                CardAction(title: "Open GitHub", icon: "arrow.up.right.square") { model.open(repository.htmlURL) }
+                CardAction(title: "View profile", icon: "person.text.rectangle") { model.destination = .discover }
+                CardAction(title: "Refresh", icon: "arrow.clockwise") { model.requestRefresh() }
+            }
+            .padding(8)
+        }
+        .repoCard()
     }
 }
 

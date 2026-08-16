@@ -3,7 +3,8 @@ import Foundation
 actor RepositoryScanner {
     private let ignoredDirectories: Set<String> = [
         ".git", ".build", ".next", ".venv", "build", "dist", "DerivedData", "node_modules",
-        "Pods", "target", "vendor", "venv"
+        "Pods", "target", "vendor", "venv", ".Trash", "Applications", "Library", "Movies", "Music",
+        "Pictures", "Photo Booth Library", "Photos Library.photoslibrary"
     ]
     private let readmeExtensions: Set<String> = ["", "md", "markdown", "mdown", "txt", "rst"]
 
@@ -22,6 +23,7 @@ actor RepositoryScanner {
     }
 
     private func scan(folder: URL, seenPaths: inout Set<String>) -> [LocalRepository] {
+        guard !ignoredDirectories.contains(folder.lastPathComponent) else { return [] }
         let manager = FileManager.default
         let keys: [URLResourceKey] = [.isDirectoryKey, .isRegularFileKey, .contentModificationDateKey]
         guard let enumerator = manager.enumerator(

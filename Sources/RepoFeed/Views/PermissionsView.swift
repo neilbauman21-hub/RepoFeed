@@ -15,7 +15,7 @@ struct PermissionsView: View {
                     VStack(alignment: .leading, spacing: 7) {
                         Text("Folder-scoped, read-only access")
                             .font(.headline)
-                        Text("RepoFeed inventories files only inside folders you explicitly select, then reads a diverse rotating sample of safe code, docs, and configs on your Mac. It always excludes secrets, keys, credentials, dependency folders, and build output. GitHub receives short profile terms—not your files, paths, or file contents.")
+                        Text("RepoFeed inventories files only inside folders you explicitly select, then reads a diverse rotating sample of safe code, docs, and configs on your Mac. It always excludes secrets, keys, credentials, dependency folders, build output, system libraries, and personal media libraries. GitHub receives short profile terms—not your files, paths, or file contents.")
                             .foregroundStyle(RepoFeedTheme.muted)
                             .fixedSize(horizontal: false, vertical: true)
                     }

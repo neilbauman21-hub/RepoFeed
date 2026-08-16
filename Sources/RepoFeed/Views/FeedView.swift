@@ -13,12 +13,21 @@ struct FeedView: View {
                         LazyVStack(spacing: 18) {
                             FeedHeader(model: model)
 
-                            if model.builderProfile.sampledFileCount > 0 {
+                            ScanComposer(model: model)
+
+                            if model.builderProfile.scannedFileCount > 0 || !model.builderProfile.technologies.isEmpty {
+                                if !model.builderProfile.opportunities.isEmpty {
+                                    OpportunityStories(profile: model.builderProfile)
+                                }
                                 BuilderProfileCard(profile: model.builderProfile)
                             }
 
                             if !model.recommendations.isEmpty {
-                                RecommendedStrip(repositories: Array(model.recommendations.prefix(5)), model: model)
+                                SectionHeading(eyebrow: "Suggested for you", title: "Tools your profile could use", trailing: "personalized")
+                                    .padding(.top, 8)
+                                ForEach(model.recommendations.prefix(3)) { repository in
+                                    SuggestedRepositoryPost(repository: repository, model: model)
+                                }
                             }
 
                             if model.localRepositories.isEmpty && model.isRefreshing {
@@ -34,7 +43,7 @@ struct FeedView: View {
                             }
                         }
                         .padding(28)
-                        .frame(maxWidth: 760)
+                        .frame(maxWidth: 720)
                         .frame(maxWidth: .infinity)
                     }
 
@@ -85,15 +94,15 @@ private struct FeedHeader: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("FOR YOU")
+                    Text("REPOFEED")
                         .font(.caption2.weight(.bold))
                         .tracking(1.8)
                         .foregroundStyle(RepoFeedTheme.primary)
-                    Text("Built around how you work.")
-                        .font(.system(size: 29, weight: .bold, design: .rounded))
+                    Text("Home")
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
                 }
                 Spacer()
-                Text("\(model.builderProfile.scannedFileCount) safe files")
+                Label("Only you", systemImage: "lock.fill")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(RepoFeedTheme.muted)
                     .padding(.horizontal, 10)
@@ -103,7 +112,7 @@ private struct FeedHeader: View {
             if !model.interestProfile.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 7) {
-                        Text("Your profile")
+                        Text("Profiled from")
                             .font(.caption)
                             .foregroundStyle(RepoFeedTheme.muted)
                         ForEach(model.interestProfile.prefix(6), id: \.self) { TopicPill(text: $0) }

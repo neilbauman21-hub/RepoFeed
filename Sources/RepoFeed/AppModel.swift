@@ -23,6 +23,9 @@ final class AppModel: ObservableObject {
     init(folderStore: FolderAccessStore = FolderAccessStore()) {
         self.folderStore = folderStore
         allowedFolders = folderStore.folders
+        if !allowedFolders.isEmpty {
+            statusMessage = "Preparing your private profile…"
+        }
         loadCache()
 
         Task { [weak self] in
