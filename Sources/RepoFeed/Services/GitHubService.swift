@@ -37,13 +37,13 @@ struct GitHubService: Sendable {
         let primaryQuery = "\(primary) tool in:name,description,readme stars:>40 archived:false"
         let benefit = opportunity ?? skills.dropFirst().first ?? "developer-tool"
         let benefitQuery = "\(primary) \(benefit) in:name,description,readme stars:>15 archived:false"
-        async let primaryResults = search(query: primaryQuery, sort: "stars", order: "desc", perPage: 20)
-        async let benefitResults = search(query: benefitQuery, sort: "stars", order: "desc", perPage: 20)
+        async let primaryResults = search(query: primaryQuery, sort: "stars", order: "desc", perPage: 50)
+        async let benefitResults = search(query: benefitQuery, sort: "stars", order: "desc", perPage: 50)
         let combined = (try await primaryResults) + (try await benefitResults)
 
         let excludedNames = Set(remoteURLs.compactMap(Self.githubFullName))
         var unique: [Int: GitHubRepository] = [:]
-        for repository in combined where !excludedNames.contains(repository.fullName.lowercased()) {
+        for repository in combined where repository.isOpenSource && !excludedNames.contains(repository.fullName.lowercased()) {
             unique[repository.id] = repository
         }
         return Array(unique.values.sorted {
@@ -59,7 +59,7 @@ struct GitHubService: Sendable {
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd"
         let query = "created:>=\(formatter.string(from: threshold)) stars:>15 archived:false"
-        return Array(try await search(query: query, sort: "stars", order: "desc", perPage: 10).prefix(8))
+        return Array(try await search(query: query, sort: "stars", order: "desc", perPage: 50).filter(\.isOpenSource).prefix(8))
     }
 
     private func search(query: String, sort: String, order: String, perPage: Int) async throws -> [GitHubRepository] {

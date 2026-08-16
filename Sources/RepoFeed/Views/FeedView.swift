@@ -22,11 +22,17 @@ struct FeedView: View {
                                 BuilderProfileCard(profile: model.builderProfile)
                             }
 
-                            if !model.recommendations.isEmpty {
+                            if model.discoveryMode == .github && !model.recommendations.isEmpty {
                                 SectionHeading(eyebrow: "Suggested for you", title: "Tools your profile could use", trailing: "personalized")
                                     .padding(.top, 8)
                                 ForEach(model.recommendations.prefix(3)) { repository in
                                     SuggestedRepositoryPost(repository: repository, model: model)
+                                }
+                            } else if model.discoveryMode == .huggingFace && !model.huggingFaceRecommendations.isEmpty {
+                                SectionHeading(eyebrow: "Open source AI", title: "Models and datasets for your work", trailing: "explicit licenses only")
+                                    .padding(.top, 8)
+                                ForEach(model.huggingFaceRecommendations.prefix(4)) { artifact in
+                                    HuggingFaceArtifactPost(artifact: artifact, model: model)
                                 }
                             }
 
@@ -49,7 +55,13 @@ struct FeedView: View {
 
                     if proxy.size.width > 900 {
                         Divider().overlay(RepoFeedTheme.border)
-                        TrendingRail(model: model)
+                        Group {
+                            if model.discoveryMode == .github {
+                                TrendingRail(model: model)
+                            } else {
+                                HuggingFaceTrendingRail(model: model)
+                            }
+                        }
                             .frame(width: min(350, proxy.size.width * 0.31))
                     }
                 }
@@ -109,6 +121,7 @@ private struct FeedHeader: View {
                     .padding(.vertical, 6)
                     .background(Color.white.opacity(0.05), in: Capsule())
             }
+            DiscoveryModePicker(model: model)
             if !model.interestProfile.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 7) {
@@ -163,16 +176,29 @@ private struct OnboardingView: View {
                 HStack(spacing: 26) {
                     PrivacyPoint(icon: "hand.raised.fill", text: "You choose every folder")
                     PrivacyPoint(icon: "internaldrive.fill", text: "File analysis stays local")
-                    PrivacyPoint(icon: "arrow.up.right.square.fill", text: "Only public GitHub searches")
+                    PrivacyPoint(icon: "arrow.up.right.square.fill", text: "Direct public API searches")
                 }
                 .padding(.top, 10)
 
-                if !model.trendingRepositories.isEmpty {
+                DiscoveryModePicker(model: model)
+
+                if model.discoveryMode == .github && !model.trendingRepositories.isEmpty {
                     VStack(alignment: .leading, spacing: 14) {
                         SectionHeading(eyebrow: "While you decide", title: "Fresh on GitHub")
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 260), spacing: 14)], spacing: 14) {
                             ForEach(model.trendingRepositories.prefix(3)) {
                                 RemoteRepositoryCard(repository: $0, model: model, compact: true)
+                            }
+                        }
+                    }
+                    .frame(maxWidth: 900)
+                    .padding(.top, 32)
+                } else if model.discoveryMode == .huggingFace && !model.huggingFaceTrending.isEmpty {
+                    VStack(alignment: .leading, spacing: 14) {
+                        SectionHeading(eyebrow: "While you decide", title: "Open on Hugging Face")
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 260), spacing: 14)], spacing: 14) {
+                            ForEach(model.huggingFaceTrending.prefix(3)) {
+                                HuggingFaceArtifactCard(artifact: $0, model: model)
                             }
                         }
                     }
@@ -184,6 +210,53 @@ private struct OnboardingView: View {
             .padding(40)
             .frame(maxWidth: .infinity)
         }
+    }
+}
+
+private struct HuggingFaceTrendingRail: View {
+    @ObservedObject var model: AppModel
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                SectionHeading(eyebrow: "Hugging Face", title: "Trending OSS", trailing: "licensed only")
+                if model.huggingFaceTrending.isEmpty {
+                    ProgressView().tint(RepoFeedTheme.primary).frame(maxWidth: .infinity).padding(30)
+                } else {
+                    ForEach(Array(model.huggingFaceTrending.prefix(6).enumerated()), id: \.element.id) { index, artifact in
+                        Button { model.open(artifact.url) } label: {
+                            HStack(spacing: 11) {
+                                Text(String(format: "%02d", index + 1))
+                                    .font(.caption.monospacedDigit().weight(.bold))
+                                    .foregroundStyle(index < 3 ? RepoFeedTheme.primary : RepoFeedTheme.muted)
+                                    .frame(width: 24)
+                                HubMark(size: 36)
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(artifact.id).font(.subheadline.weight(.semibold)).lineLimit(1)
+                                    Text("\(artifact.kind.rawValue) · \(artifact.licenseID?.uppercased() ?? "OSS")")
+                                        .font(.caption2).foregroundStyle(RepoFeedTheme.muted)
+                                }
+                                Spacer(minLength: 0)
+                                Image(systemName: "arrow.up.right").font(.caption).foregroundStyle(RepoFeedTheme.muted)
+                            }
+                            .padding(11)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .background(Color.white.opacity(0.025), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    }
+                }
+                Divider().overlay(RepoFeedTheme.border)
+                Label("Direct API · no RepoFeed server", systemImage: "lock.shield.fill")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(RepoFeedTheme.secondary)
+                Text("Private and gated artifacts, missing licenses, and non-commercial licenses are excluded.")
+                    .font(.caption)
+                    .foregroundStyle(RepoFeedTheme.muted)
+            }
+            .padding(24)
+        }
+        .background(RepoFeedTheme.sidebar.opacity(0.58))
     }
 }
 

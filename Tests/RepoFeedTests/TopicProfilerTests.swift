@@ -87,4 +87,36 @@ struct TopicProfilerTests {
         #expect(profile.technologies.first?.name == "Swift")
         #expect(!profile.interests.contains("Must"))
     }
+
+    @Test func enforcesExplicitOpenSourceLicenses() {
+        #expect(OpenSourceLicensePolicy.allows("Apache-2.0"))
+        #expect(OpenSourceLicensePolicy.allows("odc-by"))
+        #expect(!OpenSourceLicensePolicy.allows("cc-by-nc-4.0"))
+        #expect(!OpenSourceLicensePolicy.allows("openrail"))
+        #expect(!OpenSourceLicensePolicy.allows(nil))
+    }
+
+    @Test func decodesStringGatedHubArtifacts() throws {
+        let json = """
+        {
+          "id": "owner/model",
+          "author": "owner",
+          "downloads": 42,
+          "likes": 7,
+          "pipeline_tag": "text-generation",
+          "tags": ["license:apache-2.0"],
+          "private": false,
+          "gated": "manual",
+          "createdAt": "2026-08-05T08:22:59.000Z",
+          "lastModified": "2026-08-14T15:00:01.000Z",
+          "trendingScore": 3
+        }
+        """
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let response = try decoder.decode(HuggingFaceArtifactResponse.self, from: Data(json.utf8))
+        #expect(response.gated)
+        #expect(response.createdAt != nil)
+        #expect(response.artifact(kind: .model).isOpenSource)
+    }
 }

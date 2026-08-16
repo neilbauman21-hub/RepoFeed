@@ -254,6 +254,127 @@ struct SuggestedRepositoryPost: View {
     }
 }
 
+struct HuggingFaceArtifactPost: View {
+    let artifact: HuggingFaceArtifact
+    @ObservedObject var model: AppModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .top, spacing: 11) {
+                HubMark(size: 42)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("RepoFeed found an OSS \(artifact.kind.rawValue.lowercased())")
+                        .font(.subheadline.weight(.semibold))
+                    HStack(spacing: 5) {
+                        Text("Direct from Hugging Face")
+                        Text("·")
+                        Image(systemName: "lock.fill")
+                    }
+                    .font(.caption)
+                    .foregroundStyle(RepoFeedTheme.muted)
+                }
+                Spacer()
+                TopicPill(text: artifact.licenseID?.uppercased() ?? "OSS", tint: RepoFeedTheme.secondary)
+            }
+            .padding(16)
+
+            VStack(alignment: .leading, spacing: 14) {
+                Text(artifact.id)
+                    .font(.title3.weight(.bold))
+                    .textSelection(.enabled)
+                HStack(spacing: 14) {
+                    Label(artifact.kind.rawValue, systemImage: artifact.kind == .model ? "cpu" : artifact.kind == .dataset ? "tablecells" : "sparkles.rectangle.stack")
+                    Label(artifact.displayTask, systemImage: "tag.fill")
+                    if artifact.downloads > 0 { Label(compactCount(artifact.downloads), systemImage: "arrow.down.circle.fill") }
+                    Label(compactCount(artifact.likes), systemImage: "heart.fill")
+                }
+                .font(.caption)
+                .foregroundStyle(RepoFeedTheme.muted)
+
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: "lightbulb.fill")
+                        .foregroundStyle(Color(hex: 0xF7B928))
+                        .padding(.top, 2)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Why this may help")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(RepoFeedTheme.primary)
+                        Text(model.recommendationReason(for: artifact))
+                            .font(.subheadline)
+                            .foregroundStyle(RepoFeedTheme.muted)
+                    }
+                }
+                .padding(13)
+                .background(Color(hex: 0x3A3B3C), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            }
+            .padding(.horizontal, 18)
+            .padding(.bottom, 16)
+
+            Divider().overlay(RepoFeedTheme.border)
+            HStack(spacing: 0) {
+                CardAction(title: "Open on Hub", icon: "arrow.up.right.square") { model.open(artifact.url) }
+                CardAction(title: artifact.licenseID?.uppercased() ?? "Open license", icon: "checkmark.seal") { model.open(artifact.url) }
+                CardAction(title: "Refresh", icon: "arrow.clockwise") { model.requestRefresh() }
+            }
+            .padding(8)
+        }
+        .repoCard()
+    }
+}
+
+struct HuggingFaceArtifactCard: View {
+    let artifact: HuggingFaceArtifact
+    @ObservedObject var model: AppModel
+
+    var body: some View {
+        Button { model.open(artifact.url) } label: {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    HubMark(size: 38)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(artifact.kind.rawValue).font(.caption).foregroundStyle(RepoFeedTheme.muted)
+                        Text(artifact.id).font(.headline.weight(.bold)).lineLimit(1)
+                    }
+                    Spacer()
+                    Image(systemName: "arrow.up.right").foregroundStyle(RepoFeedTheme.muted)
+                }
+                Text(artifact.displayTask.replacingOccurrences(of: "-", with: " ").capitalized)
+                    .font(.subheadline)
+                    .foregroundStyle(Color.white.opacity(0.82))
+                HStack(spacing: 11) {
+                    Label(compactCount(artifact.downloads), systemImage: "arrow.down")
+                    Label(compactCount(artifact.likes), systemImage: "heart.fill")
+                    Spacer()
+                    Text(artifact.licenseID?.uppercased() ?? "OSS")
+                        .foregroundStyle(RepoFeedTheme.secondary)
+                }
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(RepoFeedTheme.muted)
+            }
+            .padding(15)
+            .frame(maxWidth: .infinity, minHeight: 145, alignment: .topLeading)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .repoCard(elevated: true)
+    }
+}
+
+struct HubMark: View {
+    var size: CGFloat
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: size * 0.28, style: .continuous)
+                .fill(LinearGradient(colors: [Color(hex: 0xFFD21E), Color(hex: 0xFF9D00)], startPoint: .topLeading, endPoint: .bottomTrailing))
+            Image(systemName: "face.smiling")
+                .font(.system(size: size * 0.48, weight: .bold))
+                .foregroundStyle(Color.black.opacity(0.75))
+        }
+        .frame(width: size, height: size)
+    }
+}
+
 struct RemoteRepositoryCard: View {
     let repository: GitHubRepository
     @ObservedObject var model: AppModel

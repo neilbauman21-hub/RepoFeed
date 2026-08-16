@@ -1,5 +1,30 @@
 import SwiftUI
 
+struct DiscoveryModePicker: View {
+    @ObservedObject var model: AppModel
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(DiscoveryMode.allCases) { mode in
+                Button { model.discoveryMode = mode } label: {
+                    HStack(spacing: 7) {
+                        Image(systemName: mode.icon)
+                        Text(mode.rawValue)
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(model.discoveryMode == mode ? .white : RepoFeedTheme.muted)
+                    .padding(.horizontal, 14)
+                    .frame(height: 34)
+                    .background(model.discoveryMode == mode ? RepoFeedTheme.primary : Color.clear, in: Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(4)
+        .background(Color(hex: 0x3A3B3C), in: Capsule())
+    }
+}
+
 struct ScanComposer: View {
     @ObservedObject var model: AppModel
 

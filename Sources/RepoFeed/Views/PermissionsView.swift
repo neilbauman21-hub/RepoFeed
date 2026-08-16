@@ -23,6 +23,22 @@ struct PermissionsView: View {
                 .padding(22)
                 .repoCard(elevated: true)
 
+                VStack(alignment: .leading, spacing: 14) {
+                    Label("No-server architecture", systemImage: "network.slash")
+                        .font(.headline)
+                        .foregroundStyle(RepoFeedTheme.secondary)
+                    HStack(alignment: .top, spacing: 20) {
+                        ArchitecturePoint(icon: "desktopcomputer", title: "One person, one Mac", detail: "No accounts, profiles, followers, or inter-user features.")
+                        ArchitecturePoint(icon: "externaldrive.fill", title: "Local state only", detail: "The profile, samples, permissions, and caches stay on this device.")
+                        ArchitecturePoint(icon: "checkmark.seal.fill", title: "OSS-only discovery", detail: "Results require an explicit approved open-source license.")
+                    }
+                    Text("RepoFeed has no backend, hosted database, analytics endpoint, or telemetry. It contacts GitHub and Hugging Face directly for public metadata only.")
+                        .font(.caption)
+                        .foregroundStyle(RepoFeedTheme.muted)
+                }
+                .padding(22)
+                .repoCard()
+
                 HStack {
                     Text("Allowed folders")
                         .font(.title3.weight(.bold))
@@ -75,5 +91,20 @@ struct PermissionsView: View {
             .frame(maxWidth: .infinity)
         }
         .background(RepoFeedTheme.background)
+    }
+}
+
+private struct ArchitecturePoint: View {
+    let icon: String
+    let title: String
+    let detail: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Image(systemName: icon).font(.title3).foregroundStyle(RepoFeedTheme.primary)
+            Text(title).font(.subheadline.weight(.bold))
+            Text(detail).font(.caption).foregroundStyle(RepoFeedTheme.muted).fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

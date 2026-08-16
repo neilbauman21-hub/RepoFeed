@@ -8,6 +8,11 @@ final class AppModel: ObservableObject {
     @Published var builderProfile: BuilderProfile = .empty
     @Published var recommendations: [GitHubRepository] = []
     @Published var trendingRepositories: [GitHubRepository] = []
+    @Published var huggingFaceRecommendations: [HuggingFaceArtifact] = []
+    @Published var huggingFaceTrending: [HuggingFaceArtifact] = []
+    @Published var discoveryMode: DiscoveryMode = .github {
+        didSet { UserDefaults.standard.set(discoveryMode.rawValue, forKey: "repofeed.discovery-mode") }
+    }
     @Published var allowedFolders: [AllowedFolder] = []
     @Published var isRefreshing = false
     @Published var statusMessage = "Choose a folder to create your feed."
@@ -18,6 +23,7 @@ final class AppModel: ObservableObject {
     private let scanner = RepositoryScanner()
     private let profileScanner = FileProfileScanner()
     private let github = GitHubService()
+    private let huggingFace = HuggingFaceService()
     private var refreshTask: Task<Void, Never>?
 
     init(folderStore: FolderAccessStore = FolderAccessStore()) {
@@ -25,6 +31,10 @@ final class AppModel: ObservableObject {
         allowedFolders = folderStore.folders
         if !allowedFolders.isEmpty {
             statusMessage = "Preparing your private profile…"
+        }
+        if let savedMode = UserDefaults.standard.string(forKey: "repofeed.discovery-mode"),
+           let mode = DiscoveryMode(rawValue: savedMode) {
+            discoveryMode = mode
         }
         loadCache()
 
@@ -115,13 +125,27 @@ final class AppModel: ObservableObject {
         } catch {
             errorMessage = error.localizedDescription
         }
+        do {
+            async let recommended = huggingFace.recommendations(for: builderProfile)
+            async let trending = huggingFace.trending()
+            let (newRecommendations, newTrending) = try await (recommended, trending)
+            huggingFaceRecommendations = newRecommendations
+            huggingFaceTrending = newTrending
+            saveCache()
+        } catch {
+            if errorMessage == nil { errorMessage = error.localizedDescription }
+        }
         isRefreshing = false
     }
 
     func refreshTrendingOnly() async {
-        guard trendingRepositories.isEmpty else { return }
+        guard trendingRepositories.isEmpty || huggingFaceTrending.isEmpty else { return }
         do {
-            trendingRepositories = try await github.trending()
+            async let githubTrending = github.trending()
+            async let hubTrending = huggingFace.trending()
+            let (newGitHub, newHub) = try await (githubTrending, hubTrending)
+            trendingRepositories = newGitHub
+            huggingFaceTrending = newHub
             saveCache()
         } catch {
             errorMessage = error.localizedDescription
@@ -157,6 +181,23 @@ final class AppModel: ObservableObject {
         return "A well-supported developer tool that complements your current mix of projects."
     }
 
+    func recommendationReason(for artifact: HuggingFaceArtifact) -> String {
+        let haystack = ([artifact.id, artifact.pipelineTag ?? "", artifact.sdk ?? ""] + artifact.tags)
+            .joined(separator: " ").lowercased()
+        if let opportunity = builderProfile.opportunities.first(where: {
+            $0.searchTerm.lowercased().split(separator: "-").map(String.init).contains(where: haystack.contains)
+        }) {
+            return "\(opportunity.title): this \(artifact.kind.rawValue.lowercased()) matches that local profile signal."
+        }
+        if haystack.contains("code") {
+            return "Could support the code-heavy projects detected in your allowed folders."
+        }
+        if haystack.contains("embedding") {
+            return "Could add local semantic search without requiring RepoFeed to run a server."
+        }
+        return "An explicitly open-licensed \(artifact.kind.rawValue.lowercased()) related to your private builder profile."
+    }
+
     private func loadCache() {
         let decoder = JSONDecoder()
         if let data = UserDefaults.standard.data(forKey: "repofeed.builder-profile"),
@@ -171,6 +212,14 @@ final class AppModel: ObservableObject {
            let cached = try? decoder.decode([GitHubRepository].self, from: data) {
             trendingRepositories = cached
         }
+        if let data = UserDefaults.standard.data(forKey: "repofeed.huggingface.recommendations"),
+           let cached = try? decoder.decode([HuggingFaceArtifact].self, from: data) {
+            huggingFaceRecommendations = cached
+        }
+        if let data = UserDefaults.standard.data(forKey: "repofeed.huggingface.trending"),
+           let cached = try? decoder.decode([HuggingFaceArtifact].self, from: data) {
+            huggingFaceTrending = cached
+        }
     }
 
     private func saveCache() {
@@ -183,6 +232,12 @@ final class AppModel: ObservableObject {
         }
         if let data = try? encoder.encode(trendingRepositories) {
             UserDefaults.standard.set(data, forKey: "repofeed.github.trending")
+        }
+        if let data = try? encoder.encode(huggingFaceRecommendations) {
+            UserDefaults.standard.set(data, forKey: "repofeed.huggingface.recommendations")
+        }
+        if let data = try? encoder.encode(huggingFaceTrending) {
+            UserDefaults.standard.set(data, forKey: "repofeed.huggingface.trending")
         }
     }
 }
